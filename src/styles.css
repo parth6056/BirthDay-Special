@@ -1,1 +1,238 @@
-/* You can add global styles to this file, and also import other style files */
+/* ── Theme tokens: midnight & starlight ──────────────────────── */
+:root {
+  /* Night sky */
+  --night: #120b22;
+  --night-2: #1b1133;
+  --indigo: #2a1a4d;
+  --plum: #3a2050;
+
+  /*
+   * Accents. Saturated hot pink fought the plum background, so the palette is
+   * built on starlight champagne with a dusty rose as the secondary — warm
+   * enough to still feel like a birthday, quiet enough to sit on a night sky.
+   */
+  --gold: #f3d29a;
+  --gold-warm: #e8b877;
+  --rose: #eda3bd;
+  --pink: #f0aecb;
+  --pink-strong: #e58fb0;
+  --lilac: #ab9ae4;
+  --mint: #7de3c0;
+
+  /* Text sitting on the dark background */
+  --ink: #ede6f2;
+  --ink-soft: #a89bb8;
+
+  /* Text sitting on the light surfaces — polaroids and the letter.
+     --rose is tuned for contrast against the dark and washes out on paper, so
+     light surfaces get their own deeper accent. */
+  --on-light: #3d2f45;
+  --on-light-soft: #75677e;
+  --rose-deep: #b8557f;
+  --paper: #fdf6ee;
+
+  /* Frosted panels */
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(255, 255, 255, 0.1);
+  --line: rgba(255, 255, 255, 0.14);
+
+  --radius-sm: 14px;
+  --radius: 24px;
+  --radius-lg: 36px;
+
+  /* On a dark page, depth comes from shadow *and* glow. */
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 18px 46px rgba(0, 0, 0, 0.6);
+  --glow-pink: 0 0 40px rgba(237, 163, 189, 0.2);
+  --glow-gold: 0 0 34px rgba(243, 210, 154, 0.24);
+
+  /*
+   * Lexend Deca throughout for headings and body. It has no true italic, so
+   * nothing in here may set `font-style: italic` — the browser would fake it
+   * by slanting the upright, which looks broken.
+   */
+  --font-display: 'Lexend Deca', system-ui, -apple-system, sans-serif;
+  --font-body: 'Lexend Deca', system-ui, -apple-system, sans-serif;
+  --font-hand: 'Dancing Script', 'Segoe Script', cursive;
+
+  /* Notch / home-indicator padding, 0 everywhere that isn't an iPhone. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  /* Stop iOS bumping up font sizes when she rotates to landscape. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  /* Light text on a dark ground blooms, so body copy sits a weight lower. */
+  font-weight: 300;
+  color: var(--ink);
+  background: var(--night);
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * The night sky. On a fixed pseudo-element rather than
+ * `background-attachment: fixed`, which iOS Safari renders incorrectly and
+ * repaints on every scroll frame.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 760px at 14% -6%, #3b1f5c 0%, transparent 62%),
+    radial-gradient(900px 640px at 92% 8%, #2b2560 0%, transparent 60%),
+    radial-gradient(1000px 720px at 50% 106%, #4a2247 0%, transparent 62%),
+    linear-gradient(180deg, var(--night) 0%, var(--night-2) 55%, var(--night) 100%);
+}
+
+/* Starfield: four tiled layers at different scales so it reads as random. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.6px 1.6px at 18% 24%, rgba(255, 255, 255, 0.95), transparent 60%),
+    radial-gradient(1.2px 1.2px at 72% 12%, rgba(255, 235, 245, 0.8), transparent 60%),
+    radial-gradient(1.1px 1.1px at 42% 68%, rgba(255, 240, 210, 0.75), transparent 60%),
+    radial-gradient(1.5px 1.5px at 88% 54%, rgba(220, 220, 255, 0.7), transparent 60%);
+  background-size: 320px 280px, 250px 230px, 410px 360px, 180px 200px;
+  animation: twinkle 7s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  from { opacity: 0.5; }
+  to { opacity: 0.95; }
+}
+
+/*
+ * Scroll lock while the gift box is up. iOS Safari ignores `overflow: hidden`
+ * on its own, so the body is pinned as well.
+ */
+body.locked {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* No grey flash box when she taps things, and no 300ms double-tap delay. */
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  /* Lexend Deca is wide and generously spaced by design, so display sizes get
+     a touch of negative tracking to stop headings sprawling. */
+  letter-spacing: -0.015em;
+  margin: 0;
+  /* Long words shouldn't punch through a 375px screen. */
+  overflow-wrap: break-word;
+}
+
+/* ── Reusable bits ───────────────────────────────────────────── */
+.section {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-block: clamp(56px, 9vw, 110px);
+  padding-inline:
+    max(20px, var(--safe-left))
+    max(20px, var(--safe-right));
+}
+
+/* Sizes stepped back down from the serif — Lexend Deca's x-height is far
+   larger, so it reads much bigger at the same font-size. */
+.section-title {
+  font-size: clamp(1.65rem, 6vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--gold);
+  margin-bottom: 12px;
+  text-wrap: balance;
+  text-shadow: 0 0 30px rgba(243, 210, 154, 0.28);
+}
+
+.section-sub {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: clamp(0.85rem, 3.2vw, 1rem);
+  font-weight: 300;
+  max-width: 46ch;
+  margin: 0 auto clamp(30px, 6vw, 54px);
+  line-height: 1.75;
+  text-wrap: pretty;
+}
+
+.card {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Fade-in-on-scroll, wired up by the reveal directive */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+::selection {
+  background: var(--pink-strong);
+  color: var(--night);
+}
+
+/* Cute scrollbar (desktop only — iOS doesn't show one) */
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: var(--night-2); }
+::-webkit-scrollbar-thumb {
+  background: var(--plum);
+  border: 3px solid var(--night-2);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--lilac); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
