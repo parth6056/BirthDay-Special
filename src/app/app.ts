@@ -5,7 +5,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { BIRTHDAY } from './birthday.config';
 import { Cake } from './components/cake';
 import { FloatingHearts } from './components/floating-hearts';
 import { Gallery } from './components/gallery';
@@ -34,10 +33,6 @@ import { Timeline } from './components/timeline';
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly footer = BIRTHDAY.footer;
-  protected readonly from = BIRTHDAY.from;
-  protected readonly name = BIRTHDAY.name;
-
   /** The gift-box curtain stays up until she taps it. */
   protected readonly entered = signal(false);
 

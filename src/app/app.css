@@ -7,36 +7,11 @@
   z-index: 1;
   opacity: 0;
   transition: opacity 0.8s ease 0.15s;
+  /* Extra room so the music pill never lands on top of the last section. */
+  padding-bottom: calc(clamp(80px, 12vw, 120px) + var(--safe-bottom));
 }
 
 /* Revealed once the gift box has been opened. */
 .page.ready {
   opacity: 1;
-}
-
-.footer {
-  padding-top: clamp(50px, 8vw, 90px);
-  /* Extra room so the music pill never lands on top of the signature. */
-  padding-bottom: calc(clamp(80px, 12vw, 120px) + var(--safe-bottom));
-  padding-inline: max(20px, var(--safe-left)) max(20px, var(--safe-right));
-  text-align: center;
-  display: grid;
-  gap: 10px;
-}
-
-.footer .line {
-  margin: 0;
-  font-size: 0.82rem;
-  letter-spacing: 0.02em;
-  color: var(--ink-soft);
-  opacity: 0.75;
-}
-
-.footer .sig {
-  margin: 0;
-  font-family: var(--font-hand);
-  font-size: clamp(1.6rem, 5.4vw, 2.3rem);
-  font-weight: 600;
-  color: var(--gold);
-  text-shadow: 0 0 28px rgba(243, 210, 154, 0.35);
 }

@@ -222,7 +222,4 @@ export const BIRTHDAY = {
     title: 'Sunehra',
     artist: 'Lost Stories, Jai Dhir',
   } as { src: string; title: string; artist: string } | null,
-
-  /** Shown at the very bottom. */
-  footer: 'made with far too much love (and a little bit of code)',
 };

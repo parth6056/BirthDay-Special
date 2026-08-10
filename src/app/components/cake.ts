@@ -300,6 +300,7 @@ export class Cake implements OnDestroy {
   private stream?: MediaStream;
   private audioCtx?: AudioContext;
   private rafId?: number;
+  private giveUpId?: ReturnType<typeof setTimeout>;
 
   protected blowOut(): void {
     if (this.blownOut()) return;
@@ -314,27 +315,75 @@ export class Cake implements OnDestroy {
   protected async listenForBlow(): Promise<void> {
     this.micError.set(null);
 
+    // Phones only hand out the mic over https (or localhost). On a plain
+    // http:// LAN address navigator.mediaDevices isn't even defined.
+    if (!window.isSecureContext) {
+      this.micError.set('the mic only works on an https link — tap the cake instead 💕');
+      return;
+    }
     if (!navigator.mediaDevices?.getUserMedia) {
       this.micError.set("your browser won't let me use the mic — just tap the cake instead 💕");
       return;
     }
 
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      this.micError.set('no mic access — tapping the cake works just as well 🩷');
+    // iOS only unlocks an AudioContext that was created inside the tap itself,
+    // so it has to happen before we await anything.
+    const Ctx: typeof AudioContext =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) {
+      this.micError.set("your browser won't let me use the mic — just tap the cake instead 💕");
       return;
+    }
+    this.audioCtx = new Ctx();
+    void this.audioCtx.resume();
+
+    try {
+      /*
+       * Mobile mics default to voice processing — noise suppression and auto
+       * gain treat a breath as junk and scrub it right out. Ask for the raw
+       * signal, and fall back to plain audio if the browser refuses.
+       */
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+      });
+    } catch {
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch {
+        this.stopListening();
+        this.micError.set('no mic access — tapping the cake works just as well 🩷');
+        return;
+      }
+    }
+
+    // Chrome on Android often hands the context back suspended after the
+    // permission prompt; a suspended analyser only ever reports silence.
+    if (this.audioCtx.state === 'suspended') {
+      try {
+        await this.audioCtx.resume();
+      } catch {
+        /* resumes on the next tap anyway */
+      }
     }
 
     this.listening.set(true);
-    this.audioCtx = new AudioContext();
     const source = this.audioCtx.createMediaStreamSource(this.stream);
     const analyser = this.audioCtx.createAnalyser();
     analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0;
     source.connect(analyser);
 
     const data = new Uint8Array(analyser.frequencyBinCount);
     let loudFrames = 0;
+    // Calibrate against the actual room (and the song that's already playing)
+    // instead of one hard-coded number that every phone mic disagrees with.
+    let baseline = 0;
+    let calibrationFrames = 0;
 
     const check = (): void => {
       if (this.blownOut()) return;
@@ -348,19 +397,39 @@ export class Cake implements OnDestroy {
       }
       const rms = Math.sqrt(sum / data.length);
 
-      // A sustained blow reads much louder than room noise.
-      loudFrames = rms > 0.16 ? loudFrames + 1 : 0;
-      if (loudFrames > 6) {
+      // First ~half second is just listening to how loud "quiet" is here.
+      if (calibrationFrames < 30) {
+        calibrationFrames++;
+        baseline = Math.max(baseline, rms);
+        this.rafId = requestAnimationFrame(check);
+        return;
+      }
+
+      // A sustained blow reads well above the room, but "well above" on a
+      // phone mic is nothing like the desktop threshold this used to use.
+      const threshold = Math.max(baseline * 2.5, 0.045);
+      loudFrames = rms > threshold ? loudFrames + 1 : 0;
+      if (loudFrames > 5) {
         this.blowOut();
         return;
       }
       this.rafId = requestAnimationFrame(check);
     };
     this.rafId = requestAnimationFrame(check);
+
+    // Don't leave the button stuck on "blow at your screen…" forever.
+    this.giveUpId = setTimeout(() => {
+      if (this.blownOut()) return;
+      this.stopListening();
+      this.micError.set("couldn't hear a thing — tap the cake and make the wish anyway 🩷");
+    }, 20_000);
   }
 
   private stopListening(): void {
     if (this.rafId) cancelAnimationFrame(this.rafId);
+    if (this.giveUpId) clearTimeout(this.giveUpId);
+    this.rafId = undefined;
+    this.giveUpId = undefined;
     this.stream?.getTracks().forEach((t) => t.stop());
     void this.audioCtx?.close();
     this.stream = undefined;
